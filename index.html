@@ -158,6 +158,8 @@
                 } else moon.flag = 0;
             };
             function animLoop() {
+                can.width = innerWidth;
+                can.height = innerHeight;
                 drawSpace();
                 drawStars();
                 if (!moon.flag) moon.orbitMoon();
