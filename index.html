@@ -17,14 +17,152 @@
         <script>
             var can = document.getElementById("canvas");
             var ctx = can.getContext("2d");
-            can.style.backgroundColor = "Black";
+            var earthImg = new Image();
+            var stars = [];
+            //Source: https://www.vhv.rs/viewpic/hTTwhhi_earth-planet-stock-photography-earth-png-transparent-png/
+            earthImg.src = "./earth.png";
 
+            class Star {
+                constructor(x, y, size, pulse) {
+                    this.x = x;
+                    this.y = y;
+                    this.size = size;
+                    this.r = size;
+                    this.pulse = pulse;
+                    this.direction = pulse; //
+
+                    stars.push(this);
+                }
+
+                draw() {
+                    ctx.beginPath();
+                    ctx.fillStyle = "White";
+                    ctx.arc(this.x, this.y, Math.abs(this.r), 0, 2 * Math.PI);
+                    ctx.fill();
+                    ctx.stroke();
+                }
+
+                puls() {
+                    if (this.r <= 0 || this.r >= this.size)
+                        this.direction *= -1;
+                    this.r += this.direction;
+                }
+            }
+
+            class Moon {
+                constructor() {
+                    this.flag = 0;
+                    this.x;
+                    this.y;
+                    this.radius = 50;
+                    this.color = "Grey";
+                    this.radians = 0;
+                    this.distance = 400;
+                    this.speed = 0.01;
+                }
+                orbitMoon() {
+                    if (
+                        (this.x - can.width / 2) * (this.y - can.height / 2) >
+                        Math.pow(this.distance, 2)
+                    ) {
+                        this.x -= 1;
+                        this.y -= 1;
+                    } else if (
+                        (this.x - can.width / 2) * (this.y - can.height / 2) +
+                            5 <
+                            Math.pow(this.distance, 2) ||
+                        (this.x - can.width / 2) * (this.y - can.height / 2) -
+                            5 >
+                            Math.pow(this.distance, 2)
+                    ) {
+                        this.calcPos();
+                        this.addRad();
+                    } else if (
+                        (this.x - can.width / 2) * (this.y - can.height / 2) <
+                        Math.pow(this.distance, 2)
+                    ) {
+                        this.x += 1;
+                        this.y += 1;
+                    }
+                }
+                draw() {
+                    ctx.beginPath();
+                    ctx.arc(this.x, this.y, this.radius, 0, Math.PI * 2, false);
+                    ctx.fillStyle = this.color;
+                    ctx.fill();
+                    ctx.closePath();
+                }
+
+                calcPos() {
+                    this.x =
+                        can.width / 2 + Math.cos(this.radians) * this.distance;
+                    this.y =
+                        can.height / 2 + Math.sin(this.radians) * this.distance;
+                }
+
+                addRad() {
+                    this.radians += this.speed;
+                    if (this.radians >= Math.PI * 2) this.radians = 0;
+                }
+
+                isin(x, y) {
+                    if ((x - this.x) * (y - this.y) < Math.pow(50, 2))
+                        return true;
+                    else return false;
+                }
+            }
+
+            //Generate stars
+            for (let i = 0; i < 100; i++)
+                new Star(
+                    Math.random() * can.width,
+                    Math.random() * can.height,
+                    Math.random() * 7,
+                    Math.random() * (0.4 - 0.1) + 0.1
+                );
+
+            function drawStars() {
+                for (i in stars) {
+                    stars[i].draw();
+                    stars[i].puls();
+                }
+            }
+
+            function drawSpace() {
+                var grd = ctx.createLinearGradient(0, 0, can.width / 0.15, 0);
+                grd.addColorStop(0, "black");
+                grd.addColorStop(1, "yellow");
+
+                // Fill with gradient
+                ctx.fillStyle = grd;
+                ctx.fillRect(0, 0, can.width, can.height);
+            }
+
+            function drawEarth() {
+                ctx.drawImage(
+                    earthImg,
+                    can.width / 2 - 250,
+                    can.height / 2 - 250,
+                    500,
+                    500
+                );
+            }
+
+            var moon = new Moon();
+            moon.calcPos();
+            can.onmousemove = (e) => {
+                if (moon.isin(e.clientX, e.clientY) && e.buttons == 1) {
+                    moon.x = e.clientX;
+                    moon.y = e.clientY;
+                    moon.flag = 1;
+                } else moon.flag = 0;
+            };
             function animLoop() {
-                ctx.beginPath();
-                ctx.fillStyle = "White";
-                ctx.arc(100, 75, 50, 0, 2 * Math.PI);
-                ctx.fill();
-                ctx.stroke();
+                drawSpace();
+                drawStars();
+                if (!moon.flag) moon.orbitMoon();
+                moon.draw();
+                drawEarth();
             }
 
             setInterval(animLoop, 1000 / 60);
